@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import '../data/mock_data.dart';
 import '../models/flashcard_set.dart';
-import '../models/category.dart'; // DODAJEMY IMPORT
+import '../models/category.dart'; 
 import 'learn_screen.dart';
 import 'create_set_screen_2.dart';
-import 'create_set_screen_1.dart'; // DODAJEMY IMPORT
+import 'create_set_screen_1.dart'; 
 
 class MySetsScreen extends StatefulWidget {
   const MySetsScreen({Key? key}) : super(key: key);
@@ -40,8 +40,6 @@ class _MySetsScreenState extends State<MySetsScreen> {
 
   // Funkcja do dodawania kategorii (potrzebna dla CreateSetScreen1)
   void _addCategory(String name) {
-    // Ta funkcja jest potrzebna, ale w tym kontekście nie musimy jej implementować
-    // ponieważ CreateSetScreen1 wymaga tego parametru
   }
 
   @override
@@ -123,7 +121,7 @@ class _MySetsScreenState extends State<MySetsScreen> {
             context,
             MaterialPageRoute(
               builder: (context) => CreateSetScreen1(
-                onCategoryAdded: _addCategory, // POPRAWIONE - przekazujemy funkcję
+                onCategoryAdded: _addCategory, 
               ),
             ),
           ).then((_) {
@@ -133,4 +131,5 @@ class _MySetsScreenState extends State<MySetsScreen> {
       ),
     );
   }
+
 }
