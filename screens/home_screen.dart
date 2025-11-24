@@ -280,7 +280,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             },
                             trailing: PopupMenuButton(
                               itemBuilder: (context) => [
-                                // --- ZMIANA TUTAJ: Usunąłem warunek if ---
+                           
                                 const PopupMenuItem(value: 'edit', child: Text('Edytuj')),
                                 const PopupMenuItem(value: 'delete', child: Text('Usuń')),
                               ],
@@ -288,7 +288,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 if (value == 'delete') {
                                   _deleteSet(set.id);
                                 } else if (value == 'edit') {
-                                  // --- ZMIANA TUTAJ: Usunąłem warunek if ---
+                              
                                   final result = await Navigator.push(
                                     context,
                                     MaterialPageRoute(
@@ -332,4 +332,5 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
 }
