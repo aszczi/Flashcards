@@ -701,4 +701,30 @@ List<FlashcardSet> mockSets = [
     ],
     ownerId: currentUserId, // Zestaw utworzony przez użytkownika
   ),
+
+  
 ];
+
+Map<String, int> dailyStats = {
+  // Przykładowe dane historyczne (żeby wykres ładnie wyglądał na start)
+  _getDateKey(DateTime.now().subtract(const Duration(days: 4))): 5,
+  _getDateKey(DateTime.now().subtract(const Duration(days: 3))): 12,
+  _getDateKey(DateTime.now().subtract(const Duration(days: 2))): 8,
+  _getDateKey(DateTime.now().subtract(const Duration(days: 1))): 20,
+  _getDateKey(DateTime.now()): 3, // Dzisiejszy startowy wynik
+};
+
+// Funkcja pomocnicza do formatowania daty na klucz (np. "2023-11-24")
+String _getDateKey(DateTime date) {
+  return date.toIso8601String().split('T')[0];
+}
+
+// Funkcja wywoływana, gdy użytkownik przerobi fiszkę
+void recordFlashcardStudy() {
+  final todayKey = _getDateKey(DateTime.now());
+  if (dailyStats.containsKey(todayKey)) {
+    dailyStats[todayKey] = dailyStats[todayKey]! + 1;
+  } else {
+    dailyStats[todayKey] = 1;
+  }
+}

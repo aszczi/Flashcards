@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../data/mock_data.dart';
-import '../models/category.dart'; // DODAJEMY IMPORT
+import '../models/category.dart';
 import '../models/flashcard_set.dart';
 import '../models/flashcard.dart';
 import 'create_set_screen_1.dart';
@@ -8,6 +8,8 @@ import 'learn_screen.dart';
 import 'saved_flashcards_screen.dart';
 import 'search_screen.dart';
 import 'my_sets_screen.dart';
+import 'edit_set_screen.dart';
+import 'stats_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -65,11 +67,15 @@ class _HomeScreenState extends State<HomeScreen> {
         _toggleSelection[i] = i == index;
       }
 
-      if (index == 0) { // Ulubione
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Funkcjonalność ulubionych w trakcie rozwoju...')),
-        );
+      if (index == 0) { // Statystyki
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const StatsScreen()),
+        ).then((_) {
+          _resetFilters();
+        });
         _toggleSelection[0] = false;
+        
       } else if (index == 1) { // Moje
         _showOnlyMySets = true;
         _filterSets();
@@ -195,12 +201,13 @@ class _HomeScreenState extends State<HomeScreen> {
               onChanged: (value) => _filterSets(),
             ),
             const SizedBox(height: 10),
-            // Przyciski Ulubione / Moje / Zapisane
+            // Przyciski Statystyki / Moje / Zapisane
             ToggleButtons(
               isSelected: _toggleSelection,
               onPressed: _onToggleChanged,
+              borderRadius: BorderRadius.circular(8),
               children: const [
-                Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text('Ulubione')),
+                Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text('Statystyki')),
                 Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text('Moje')),
                 Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text('Zapisane')),
               ],
@@ -249,7 +256,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         final set = _filteredSets[index];
                         final category = mockCategories.firstWhere(
                           (cat) => cat.id == set.categoryId,
-                          orElse: () => Category(id: '?', name: 'Brak kategorii'), // POPRAWIONE
+                          orElse: () => Category(id: '?', name: 'Brak kategorii'),
                         );
 
                         return Card(
@@ -261,7 +268,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 ? const Icon(Icons.person, color: Colors.blue)
                                 : null,
                             title: Text(set.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                            subtitle: Text('Kategoria: ${category.name}\n${set.flashcards.length} pytania'), // POPRAWIONE
+                            subtitle: Text('Kategoria: ${category.name}\n${set.flashcards.length} pytania'),
                             isThreeLine: true,
                             onTap: () {
                               Navigator.push(
@@ -273,15 +280,28 @@ class _HomeScreenState extends State<HomeScreen> {
                             },
                             trailing: PopupMenuButton(
                               itemBuilder: (context) => [
-                                if (set.ownerId == currentUserId)
-                                  const PopupMenuItem(value: 'edit', child: Text('Edytuj')),
+                                // --- ZMIANA TUTAJ: Usunąłem warunek if ---
+                                const PopupMenuItem(value: 'edit', child: Text('Edytuj')),
                                 const PopupMenuItem(value: 'delete', child: Text('Usuń')),
                               ],
-                              onSelected: (value) {
+                              onSelected: (value) async {
                                 if (value == 'delete') {
                                   _deleteSet(set.id);
-                                } else if (value == 'edit' && set.ownerId == currentUserId) {
-                                  _showEditDialog(set);
+                                } else if (value == 'edit') {
+                                  // --- ZMIANA TUTAJ: Usunąłem warunek if ---
+                                  final result = await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => EditSetScreen(set: set),
+                                    ),
+                                  );
+                                  
+                                  if (result == true) {
+                                    _filterSets();
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Zestaw zaktualizowany')),
+                                    );
+                                  }
                                 }
                               },
                             ),
@@ -309,22 +329,6 @@ class _HomeScreenState extends State<HomeScreen> {
             });
           });
         },
-      ),
-    );
-  }
-
-  void _showEditDialog(FlashcardSet set) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Edytuj zestaw: ${set.title}'),
-        content: const Text('Funkcjonalność edycji w trakcie rozwoju...'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
       ),
     );
   }
