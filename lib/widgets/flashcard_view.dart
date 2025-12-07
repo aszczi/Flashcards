@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/flashcard.dart';
+import '../data/mock_data.dart';
 
 class FlashcardView extends StatefulWidget {
   final Flashcard flashcard;
@@ -22,6 +23,37 @@ class FlashcardView extends StatefulWidget {
 class _FlashcardViewState extends State<FlashcardView> {
   bool _isAnswerVisible = false;
   bool _isAssessmentVisible = false;
+  bool _isSaved = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkIfSaved();
+  }
+
+  void _checkIfSaved() {
+    setState(() {
+      _isSaved = savedFlashcards.any((f) => f.id == widget.flashcard.id);
+    });
+  }
+
+  void _toggleSave() {
+    setState(() {
+      if (_isSaved) {
+        savedFlashcards.removeWhere((f) => f.id == widget.flashcard.id);
+        _isSaved = false;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Fiszka usunięta z zapisanych')),
+        );
+      } else {
+        savedFlashcards.add(widget.flashcard);
+        _isSaved = true;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Fiszka zapisana')),
+        );
+      }
+    });
+  }
 
   void _showAnswer() {
     setState(() {
@@ -32,7 +64,7 @@ class _FlashcardViewState extends State<FlashcardView> {
   void _hideAnswer() {
     setState(() {
       _isAnswerVisible = false;
-      _isAssessmentVisible = false; // Schowaj też ocenę
+      _isAssessmentVisible = false;
     });
   }
   
@@ -43,9 +75,7 @@ class _FlashcardViewState extends State<FlashcardView> {
   }
 
   void _submitAnswer(bool isKnown) {
-    // Przekaż odpowiedź do rodzica (LearnScreen)
     widget.onAnswered(isKnown);
-    // Zresetuj widok dla następnej karty
     setState(() {
       _isAnswerVisible = false;
       _isAssessmentVisible = false;
@@ -59,12 +89,22 @@ class _FlashcardViewState extends State<FlashcardView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Licznik "1/2"
-          Center(
-            child: Text(
-              '${widget.currentIndex} / ${widget.totalCount}',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
+          // Górny pasek z licznikiem i przyciskiem zapisu
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '${widget.currentIndex} / ${widget.totalCount}',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              IconButton(
+                icon: Icon(
+                  _isSaved ? Icons.bookmark : Icons.bookmark_border,
+                  color: _isSaved ? Colors.blue : Colors.grey,
+                ),
+                onPressed: _toggleSave,
+              ),
+            ],
           ),
           const SizedBox(height: 10),
           // Główny kontener Pytanie/Odpowiedź
@@ -88,13 +128,11 @@ class _FlashcardViewState extends State<FlashcardView> {
           const SizedBox(height: 20),
           // Sekcja przycisków
           if (!_isAnswerVisible)
-            // Stan 1: Pokaż odpowiedź (image_1a4a68.png)
             ElevatedButton(
               onPressed: _showAnswer,
               child: const Text('Pokaż odpowiedź'),
             )
           else if (_isAnswerVisible && !_isAssessmentVisible)
-            // Stan 2: Ukryj odpowiedź (image_1a4a8e.png)
             Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -109,7 +147,6 @@ class _FlashcardViewState extends State<FlashcardView> {
               ],
             )
           else
-            // Stan 3: Oceń (image_1a4ac4.png)
             Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

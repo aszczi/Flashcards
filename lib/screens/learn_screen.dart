@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/flashcard_set.dart';
 import '../widgets/flashcard_view.dart';
 import 'results_screen.dart';
+import '../data/mock_data.dart'; // Upewnij się, że ten import tu jest
 
 class LearnScreen extends StatefulWidget {
   final FlashcardSet flashcardSet;
@@ -29,6 +30,10 @@ class _LearnScreenState extends State<LearnScreen> {
   }
 
   void _onAnswered(String flashcardId, bool isKnown) {
+    // --- NOWA LINIA ---
+    recordFlashcardStudy(); // Zapisuje +1 do statystyk dnia
+    // ------------------
+
     // Zapisz postęp
     setState(() {
       _progress[flashcardId] = isKnown;

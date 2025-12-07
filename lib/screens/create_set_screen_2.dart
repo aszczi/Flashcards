@@ -1,32 +1,52 @@
 import 'package:flutter/material.dart';
-import '../data/mock_data.dart';
+import '../data/mock_data.dart'; // Importujemy currentUserId
 import '../models/flashcard.dart';
 import '../models/flashcard_set.dart';
 import 'create_set_success_screen.dart';
 
-// Klasa pomocnicza do zarządzania kontrolerami fiszek
 class FlashcardControllers {
   final TextEditingController questionController = TextEditingController();
   final TextEditingController answerController = TextEditingController();
+
+  void dispose() {
+    questionController.dispose();
+    answerController.dispose();
+  }
 }
 
 class CreateSetScreen2 extends StatefulWidget {
   final FlashcardSet draftSet;
-  const CreateSetScreen2({Key? key, required this.draftSet}) : super(key: key);
+  final bool isEditing;
+  const CreateSetScreen2({Key? key, required this.draftSet, this.isEditing = false}) : super(key: key);
 
   @override
   _CreateSetScreen2State createState() => _CreateSetScreen2State();
 }
 
 class _CreateSetScreen2State extends State<CreateSetScreen2> {
-  // Lista kontrolerów dla dynamicznie dodawanych fiszek
   List<FlashcardControllers> _flashcardControllers = [];
 
   @override
   void initState() {
     super.initState();
-    // Zacznij z jedną pustą fiszką
-    _addFlashcardFields();
+    if (widget.isEditing && widget.draftSet.flashcards.isNotEmpty) {
+      for (final flashcard in widget.draftSet.flashcards) {
+        final controllers = FlashcardControllers();
+        controllers.questionController.text = flashcard.question;
+        controllers.answerController.text = flashcard.answer;
+        _flashcardControllers.add(controllers);
+      }
+    } else {
+      _addFlashcardFields();
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final controller in _flashcardControllers) {
+      controller.dispose();
+    }
+    super.dispose();
   }
 
   void _addFlashcardFields() {
@@ -35,8 +55,13 @@ class _CreateSetScreen2State extends State<CreateSetScreen2> {
     });
   }
 
+  void _removeFlashcardFields(int index) {
+    setState(() {
+      _flashcardControllers.removeAt(index);
+    });
+  }
+
   void _finishCreatingSet() {
-    // 1. Stwórz listę fiszek z kontrolerów
     List<Flashcard> newFlashcards = [];
     for (int i = 0; i < _flashcardControllers.length; i++) {
       final q = _flashcardControllers[i].questionController.text;
@@ -44,43 +69,62 @@ class _CreateSetScreen2State extends State<CreateSetScreen2> {
 
       if (q.isNotEmpty && a.isNotEmpty) {
         newFlashcards.add(
-          Flashcard(id: 'f${mockSets.length + 1}-$i', question: q, answer: a),
+          Flashcard(
+            id: widget.isEditing && i < widget.draftSet.flashcards.length 
+                ? widget.draftSet.flashcards[i].id 
+                : 'f${DateTime.now().millisecondsSinceEpoch}-$i',
+            question: q,
+            answer: a,
+          ),
         );
       }
     }
 
     if (newFlashcards.isEmpty) {
-      // Nie pozwól na zapisanie pustego zestawu
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Dodaj przynajmniej jedną fiszkę')),
       );
       return;
     }
 
-    // 2. Stwórz finalny obiekt zestawu
     final newSet = FlashcardSet(
-      id: 's${mockSets.length + 1}', // Nowe ID
+      id: widget.isEditing ? widget.draftSet.id : 's${mockSets.length + 1}',
       title: widget.draftSet.title,
       description: widget.draftSet.description,
       categoryId: widget.draftSet.categoryId,
       flashcards: newFlashcards,
+      ownerId: currentUserId, // DODAJEMY ownerId dla nowych zestawów
     );
 
-    // 3. Dodaj go do "bazy danych"
-    mockSets.add(newSet);
+    if (widget.isEditing) {
+      final index = mockSets.indexWhere((set) => set.id == widget.draftSet.id);
+      if (index != -1) {
+        mockSets[index] = newSet;
+      }
+    } else {
+      mockSets.add(newSet);
+    }
 
-    // 4. Przejdź do ekranu sukcesu
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (context) => CreateSetSuccessScreen(createdSet: newSet)),
-      (route) => route.isFirst, // Wyczyść stos nawigacji do ekranu głównego
+      (route) => route.isFirst,
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.draftSet.title)),
+      appBar: AppBar(
+        title: Text(widget.draftSet.title),
+        actions: [
+          if (widget.isEditing)
+            IconButton(
+              icon: const Icon(Icons.save),
+              onPressed: _finishCreatingSet,
+            ),
+        ],
+      ),
       body: Column(
         children: [
           Expanded(
@@ -95,7 +139,17 @@ class _CreateSetScreen2State extends State<CreateSetScreen2> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Fiszka ${index + 1}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Fiszka ${index + 1}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                            if (_flashcardControllers.length > 1)
+                              IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () => _removeFlashcardFields(index),
+                              ),
+                          ],
+                        ),
                         TextFormField(
                           controller: _flashcardControllers[index].questionController,
                           decoration: const InputDecoration(labelText: 'Pytanie'),
@@ -126,7 +180,7 @@ class _CreateSetScreen2State extends State<CreateSetScreen2> {
                 const SizedBox(height: 10),
                 ElevatedButton(
                   onPressed: _finishCreatingSet,
-                  child: const Text('Zakończ'),
+                  child: Text(widget.isEditing ? 'Zapisz zmiany' : 'Zakończ'),
                 ),
               ],
             ),

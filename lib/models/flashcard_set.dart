@@ -6,6 +6,7 @@ class FlashcardSet {
   final String description;
   final String categoryId;
   final List<Flashcard> flashcards;
+  final String? ownerId; // Nowe pole - identyfikator właściciela
 
   FlashcardSet({
     required this.id,
@@ -13,5 +14,6 @@ class FlashcardSet {
     required this.description,
     required this.categoryId,
     required this.flashcards,
+    this.ownerId, // Domyślnie null = zestaw systemowy
   });
 }
